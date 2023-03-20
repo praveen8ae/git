@@ -2097,4 +2097,35 @@ test_expect_failure 'diff-files with pathspec outside sparse definition' '
 	test_all_match git diff-files folder1/a
 '
 
+test_expect_success 'diff-files pathspec expands index when necessary' '
+	init_repos &&
+
+	write_script edit-contents <<-\EOF &&
+	echo text >>"$1"
+	EOF
+
+	run_on_all ../edit-contents deep/a &&
+
+	# pathspec that should expand index
+	! ensure_not_expanded diff-files "*/a" &&
+	test_must_be_empty sparse-index-err &&
+
+	! ensure_not_expanded diff-files "**a" &&
+	test_must_be_empty sparse-index-err
+'
+
+test_expect_success 'sparse index is not expanded: diff-files' '
+	init_repos &&
+
+	write_script edit-contents <<-\EOF &&
+	echo text >>"$1"
+	EOF
+
+	run_on_all ../edit-contents deep/a &&
+
+	ensure_not_expanded diff-files &&
+	ensure_not_expanded diff-files deep/a &&
+	ensure_not_expanded diff-files deep/*
+'
+
 test_done
